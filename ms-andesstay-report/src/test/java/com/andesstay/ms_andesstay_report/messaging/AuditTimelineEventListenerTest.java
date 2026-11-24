@@ -25,6 +25,9 @@ class AuditTimelineEventListenerTest {
     @Mock
     private AuditTimelineProjectionRepository repository;
 
+    @Mock
+    private PayloadValidator payloadValidator;
+
     @InjectMocks
     private AuditTimelineEventListener listener;
 

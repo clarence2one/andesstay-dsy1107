@@ -13,6 +13,7 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.listener.ContainerProperties;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
 import org.springframework.util.backoff.FixedBackOff;
 
@@ -42,17 +43,23 @@ public class KafkaConsumerConfig {
      */
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, AuditTimelineEntry>
-            auditTimelineKafkaListenerContainerFactory(@Value("${spring.kafka.bootstrap-servers}") String bootstrapServers) {
+            auditTimelineKafkaListenerContainerFactory(@Value("${spring.kafka.bootstrap-servers}") String bootstrapServers,
+                                                       KafkaTemplate<String, Object> kafkaTemplate,
+                                                       @Value("${andesstay.kafka.audit-listener-auto-startup:true}") boolean autoStartup) {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "ms-andesstay-report-audit-timeline");
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
 
-        JacksonJsonDeserializer<AuditTimelineEntry> valueDeserializer =
+        JacksonJsonDeserializer<AuditTimelineEntry> jsonDeserializer =
                 new JacksonJsonDeserializer<>(AuditTimelineEntry.class);
-        valueDeserializer.setUseTypeHeaders(false);
-        valueDeserializer.addTrustedPackages("com.andesstay.ms_andesstay_report.messaging");
+        jsonDeserializer.setUseTypeHeaders(false);
+        jsonDeserializer.addTrustedPackages("com.andesstay.ms_andesstay_report.messaging");
+        // Un JSON malformado no detiene el listener: ErrorHandlingDeserializer lo entrega como error
+        // y el DefaultErrorHandler lo reintenta dos veces antes de publicarlo en audit.timeline.DLT.
+        ErrorHandlingDeserializer<AuditTimelineEntry> valueDeserializer =
+                new ErrorHandlingDeserializer<>(jsonDeserializer);
 
         DefaultKafkaConsumerFactory<String, AuditTimelineEntry> consumerFactory =
                 new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), valueDeserializer);
@@ -61,8 +68,12 @@ public class KafkaConsumerConfig {
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory);
         factory.setConcurrency(3);
+        // En tests se desactiva para no unirse al consumer group de la instancia real.
+        factory.setAutoStartup(autoStartup);
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
-        factory.setCommonErrorHandler(new DefaultErrorHandler(new FixedBackOff(2000L, 2L)));
+        DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(kafkaTemplate,
+                (record, ex) -> new TopicPartition(record.topic() + ".DLT", -1));
+        factory.setCommonErrorHandler(new DefaultErrorHandler(recoverer, new FixedBackOff(2000L, 2L)));
         return factory;
     }
 }

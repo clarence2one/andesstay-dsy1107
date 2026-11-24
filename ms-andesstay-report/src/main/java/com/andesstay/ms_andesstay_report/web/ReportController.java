@@ -1,5 +1,6 @@
 package com.andesstay.ms_andesstay_report.web;
 
+import com.andesstay.ms_andesstay_report.messaging.ReservationKpi;
 import com.andesstay.ms_andesstay_report.web.dto.KpisResponse;
 import com.andesstay.ms_andesstay_report.web.dto.TopUnitResponse;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,14 +18,22 @@ import java.util.List;
 public class ReportController {
 
     private final ReportService service;
+    private final StreamKpiService streamKpiService;
 
-    public ReportController(ReportService service) {
+    public ReportController(ReportService service, StreamKpiService streamKpiService) {
         this.service = service;
+        this.streamKpiService = streamKpiService;
     }
 
     @GetMapping("/kpis")
     public KpisResponse kpis(@RequestParam(required = false) String range) {
         return service.kpis(range);
+    }
+
+    /** State store de Kafka Streams consultado en caliente (Interactive Queries). */
+    @GetMapping("/stream-kpis")
+    public List<ReservationKpi> streamKpis() {
+        return streamKpiService.kpis();
     }
 
     @GetMapping("/top-units")

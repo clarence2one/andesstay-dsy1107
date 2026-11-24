@@ -2,9 +2,9 @@ package com.andesstay.ms_andesstay_report.messaging;
 
 import com.andesstay.ms_andesstay_report.domain.AuditTimelineProjection;
 import com.andesstay.ms_andesstay_report.repository.AuditTimelineProjectionRepository;
-import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
@@ -19,9 +19,12 @@ public class AuditTimelineEventListener {
     private static final Logger log = LoggerFactory.getLogger(AuditTimelineEventListener.class);
 
     private final AuditTimelineProjectionRepository repository;
+    private final PayloadValidator payloadValidator;
 
-    public AuditTimelineEventListener(AuditTimelineProjectionRepository repository) {
+    public AuditTimelineEventListener(AuditTimelineProjectionRepository repository,
+                                      PayloadValidator payloadValidator) {
         this.repository = repository;
+        this.payloadValidator = payloadValidator;
     }
 
     @KafkaListener(
@@ -29,22 +32,28 @@ public class AuditTimelineEventListener {
             groupId = "ms-andesstay-report-audit-timeline",
             containerFactory = "auditTimelineKafkaListenerContainerFactory"
     )
-    public void onAuditTimelineEntry(@Valid @Payload AuditTimelineEntry entry) {
-        if (repository.existsByEventId(entry.eventId())) {
-            log.info("Entrada {} ya proyectada en el timeline, se ignora el redelivery", entry.eventId());
-            return;
-        }
+    public void onAuditTimelineEntry(@Payload AuditTimelineEntry entry) {
+        payloadValidator.validate(entry);
+        MDC.put("correlationId", entry.eventId());
+        try {
+            if (repository.existsByEventId(entry.eventId())) {
+                log.info("Entrada {} ya proyectada en el timeline, se ignora el redelivery", entry.eventId());
+                return;
+            }
 
-        repository.save(AuditTimelineProjection.builder()
-                .eventId(entry.eventId())
-                .reservationId(entry.reservationId())
-                .eventType(entry.eventType())
-                .previousStatus(entry.previousStatus())
-                .newStatus(entry.newStatus())
-                .actorId(entry.actorId())
-                .actorRole(entry.actorRole())
-                .occurredAt(entry.occurredAt())
-                .build());
-        log.info("Timeline proyectado: reserva {} -> {}", entry.reservationId(), entry.newStatus());
+            repository.save(AuditTimelineProjection.builder()
+                    .eventId(entry.eventId())
+                    .reservationId(entry.reservationId())
+                    .eventType(entry.eventType())
+                    .previousStatus(entry.previousStatus())
+                    .newStatus(entry.newStatus())
+                    .actorId(entry.actorId())
+                    .actorRole(entry.actorRole())
+                    .occurredAt(entry.occurredAt())
+                    .build());
+            log.info("Timeline proyectado: reserva {} -> {}", entry.reservationId(), entry.newStatus());
+        } finally {
+            MDC.clear();
+        }
     }
 }

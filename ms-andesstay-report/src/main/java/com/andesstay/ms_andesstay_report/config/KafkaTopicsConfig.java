@@ -38,6 +38,19 @@ public class KafkaTopicsConfig {
                 kafkaProperties.auditRetentionMs(), kafkaProperties.auditRetentionBytes());
     }
 
+    @Bean
+    public NewTopic auditTimelineDeadLetterTopic() {
+        return topic(kafkaProperties.topicAuditTimeline() + ".DLT",
+                kafkaProperties.dltRetentionMs(), kafkaProperties.dltRetentionBytes());
+    }
+
+    /** Salida de la topologia de Kafka Streams (KPI por unidad y ventana de 1 minuto). */
+    @Bean
+    public NewTopic reservationKpisTopic() {
+        return topic(ReservationKpiTopology.KPI_TOPIC,
+                kafkaProperties.reservationsRetentionMs(), kafkaProperties.reservationsRetentionBytes());
+    }
+
     /** Mismas políticas que audit para no crear el tópico con una configuración distinta. */
     private NewTopic topic(String name, long retentionMs, long retentionBytes) {
         return new NewTopic(name, kafkaProperties.partitions(), (short) kafkaProperties.replicationFactor())
@@ -45,7 +58,9 @@ public class KafkaTopicsConfig {
                         "retention.ms", Long.toString(retentionMs),
                         "retention.bytes", Long.toString(retentionBytes),
                         "cleanup.policy", kafkaProperties.cleanupPolicy(),
-                        "min.insync.replicas", Integer.toString(kafkaProperties.minInsyncReplicas())
+                        // RF=1 en local: min.insync.replicas no puede ser mayor que el factor de replicacion.
+                        "min.insync.replicas", Integer.toString(
+                                Math.min(kafkaProperties.minInsyncReplicas(), kafkaProperties.replicationFactor()))
                 ));
     }
 }

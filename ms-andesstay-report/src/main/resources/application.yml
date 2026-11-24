@@ -18,7 +18,7 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${AZURE_ISSUER_URI:https://login.microsoftonline.com/fbf645d5-8f6d-45fc-9e8d-c8866d008af1/v2.0}
+          issuer-uri: ${AZURE_ISSUER_URI:https://login.microsoftonline.com/5fb0afd3-b475-47e9-862b-1ce06143be35/v2.0}
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
@@ -47,28 +47,40 @@ spring:
     listener:
       ack-mode: record
       concurrency: 3
+    streams:
+      application-id: ${KAFKA_STREAMS_APPLICATION_ID:andesstay-kpi-stream}
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+      properties:
+        # Paralelismo = numero de particiones del topic de entrada (materia 3.3.1).
+        num.stream.threads: 3
+        # Los serdes se pasan explicitamente en la topologia; estos son solo el default.
+        default.key.serde: org.apache.kafka.common.serialization.Serdes$StringSerde
+        default.value.serde: org.apache.kafka.common.serialization.Serdes$ByteArraySerde
+        # Un evento con JSON invalido se registra y se omite; no detiene toda la topologia.
+        default.deserialization.exception.handler: org.apache.kafka.streams.errors.LogAndContinueExceptionHandler
 
 server:
   port: ${SERVER_PORT:8085}
 
 andesstay:
   security:
-    audience: ${AZURE_API_AUDIENCE:api://d6959b0c-9ec2-432e-bddb-54bd0e83ace9}
+    audience: ${AZURE_API_AUDIENCE:api://e2d52786-8292-433e-a464-d575268eca38}
     roles-claim: roles
   kafka:
     topic-reservations-events: reservations.events
     topic-audit-timeline: audit.timeline
     partitions: 3
-    # 3 réplicas en el cluster de 3 brokers; en local con 1 broker se baja a 1 con esta variable.
+    # 3 rÃ©plicas en el cluster de 3 brokers; en local con 1 broker se baja a 1 con esta variable.
     replication-factor: ${KAFKA_TOPIC_REPLICATION_FACTOR:1}
     cleanup-policy: delete
-    min-insync-replicas: 2
-    reservations-retention-ms: 604800000      # 7 días para el flujo de eventos
-    reservations-retention-bytes: 1073741824  # 1 GB por partición
-    dlt-retention-ms: 1209600000              # 14 días para debugging de errores
-    dlt-retention-bytes: 268435456            # 256 MB por partición
-    audit-retention-ms: 2592000000            # 30 días para la auditoría
-    audit-retention-bytes: 2147483648         # 2 GB por partición
+    # Local: 1 broker / RF=1. En cluster de 3 brokers subir con KAFKA_MIN_INSYNC_REPLICAS=2.
+    min-insync-replicas: ${KAFKA_MIN_INSYNC_REPLICAS:1}
+    reservations-retention-ms: 604800000      # 7 dÃ­as para el flujo de eventos
+    reservations-retention-bytes: 1073741824  # 1 GB por particiÃ³n
+    dlt-retention-ms: 1209600000              # 14 dÃ­as para debugging de errores
+    dlt-retention-bytes: 268435456            # 256 MB por particiÃ³n
+    audit-retention-ms: 2592000000            # 30 dÃ­as para la auditorÃ­a
+    audit-retention-bytes: 2147483648         # 2 GB por particiÃ³n
 
 management:
   endpoints:
