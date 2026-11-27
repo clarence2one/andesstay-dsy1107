@@ -4,11 +4,11 @@ export const environment = {
     clientId: 'e2d52786-8292-433e-a464-d575268eca38',
     tenantId: '5fb0afd3-b475-47e9-862b-1ce06143be35',
     authority: 'https://login.microsoftonline.com/5fb0afd3-b475-47e9-862b-1ce06143be35',
-    // Frontend publicado en AWS (API Gateway HTTP). No usar localhost en la entrega.
-    redirectUri: 'https://e94n72mnmk.execute-api.us-east-1.amazonaws.com',
-    postLogoutRedirectUri: 'https://e94n72mnmk.execute-api.us-east-1.amazonaws.com/login',
+    // Se resuelve solo a la URL publica donde quede desplegado el frontend en AWS.
+    redirectUri: window.location.origin,
+    postLogoutRedirectUri: window.location.origin,
   },
   apiScope: 'api://e2d52786-8292-433e-a464-d575268eca38/read',
-  // Mismo API Gateway: sirve el frontend y hace de BFF de los microservicios.
-  bffUrl: 'https://e94n72mnmk.execute-api.us-east-1.amazonaws.com',
+  // El frontend y el BFF viven en el mismo origen del API Gateway de AWS.
+  bffUrl: window.location.origin,
 };
