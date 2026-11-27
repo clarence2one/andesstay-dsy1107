@@ -86,7 +86,10 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
 
                         // Frontend Angular publico servido por el propio BFF en AWS
-                        .requestMatchers("/", "/index.html", "/login", "/favicon.ico", "/*.js", "/*.css").permitAll()
+                        .requestMatchers("/", "/index.html", "/login", "/favicon.ico", "/*.js", "/*.css",
+                                "/images/**", "/3rdpartylicenses.txt").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/dashboard", "/reservations", "/reservations/**",
+                                "/catalog", "/reports", "/audit").permitAll()
 
                         // Catalogo: solo Admin gestiona inventario/tarifas; el resto de roles solo lectura
                         .requestMatchers(HttpMethod.POST, "/api/catalog/**").hasRole("Admin")
