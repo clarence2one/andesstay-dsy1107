@@ -11,6 +11,6 @@ export const environment = {
     postLogoutRedirectUri: 'http://localhost:4200/login',
   },
   apiScope: 'api://e2d52786-8292-433e-a464-d575268eca38/read',
-  // API Gateway HTTP de AWS (lo imprime infra/aws/provision.sh al terminar).
-  bffUrl: 'https://e94n72mnmk.execute-api.us-east-1.amazonaws.com',
+  // API Gateway HTTP de AWS usado en la entrega.
+  bffUrl: 'https://a8dgq5xqm0.execute-api.us-east-1.amazonaws.com',
 };
