@@ -1,0 +1,16 @@
+.form-panel {
+  max-width: 1000px;
+}
+
+table {
+  font-size: 0.86rem;
+
+  td:nth-child(2) {
+    font-weight: 600;
+    color: var(--color-primary-dark);
+  }
+
+  td:first-child {
+    font-size: 0.82rem;
+  }
+}

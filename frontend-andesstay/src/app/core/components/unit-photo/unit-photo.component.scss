@@ -2,6 +2,8 @@
   position: relative;
   display: block;
   aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: var(--color-bg-alt);
 }
 
 svg,
@@ -10,16 +12,25 @@ svg,
   height: 100%;
   display: block;
   object-fit: cover;
+  transition: transform 0.35s ease;
+}
+
+:host(:hover) .unit-photo-img {
+  transform: scale(1.035);
 }
 
 .unit-type-badge {
   position: absolute;
   top: 0.6rem;
   left: 0.6rem;
-  background: rgba(255, 253, 248, 0.9);
+  background: rgba(255, 253, 248, 0.92);
+  backdrop-filter: blur(6px);
   color: var(--color-text);
   font-size: 0.72rem;
-  font-weight: 600;
-  padding: 0.2rem 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 0.25rem 0.65rem;
   border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 3px 10px rgba(58, 50, 38, 0.12);
 }

@@ -1,4 +1,24 @@
+.cards {
+  margin-bottom: 1rem;
+}
+
 h2 {
-  margin: 1.5rem 0 0.75rem;
-  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 2rem 0 0.9rem;
+  font-size: 1.15rem;
+
+  &::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: var(--color-accent);
+    box-shadow: 0 0 0 4px var(--color-accent-light);
+  }
+}
+
+table {
+  margin-bottom: 1.75rem;
 }
